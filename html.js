@@ -5,10 +5,11 @@ define(['text'], function(textPlugin) {
 	return {
 		
 		load: function(name, req, onLoad, config) {
-			var file = name;
+			var file = name,
+				segments = file.split('/');
 		
 			// If the module name does not have an extension, append the default one
-			if (file.lastIndexOf('.') == -1) {
+			if (segments[segments.length - 1].lastIndexOf('.') == -1) {
 				file += '.html';
 			}
 			
