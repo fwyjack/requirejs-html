@@ -15,9 +15,6 @@ define(['text'], function(textPlugin) {
 			
 			textPlugin.get(req.toUrl(file), function(html) {
 			
-				console.group(name);
-				console.log('Original:', html);
-				
 				if (config.config.html.comments === true) {
 					html = this.stripComments(html);
 				}
@@ -38,8 +35,6 @@ define(['text'], function(textPlugin) {
 					buildText[name] = textPlugin.jsEscape(html);
 				}
 				
-				console.log('Final:', html);
-				console.groupEnd();
 				onLoad(html);
 				
 			}.bind(this), onLoad.error);
