@@ -68,7 +68,7 @@ define(['text'], function(textPlugin) {
 		
 		stripWhitespaceWithinTags: function(html) {
 			var tagPattern = /<([^>"']*?|"[^"]*?"|'[^']*?')+>/g,
-				attrPattern = /([^\0\n\r\s"'>\/=]+)(?:\s*=\s*([^\n\r\s"'=><`]+|"[^"]*"|'[^']*'))?/gi,
+				attrPattern = /([^\0\n\r\s"'>\/=]+)(?:\s*(=)\s*([^\n\r\s"'=><`]+|"[^"]*"|'[^']*'))?/gi,
 				lastIndex = 0,
 				result = '',
 				match,
@@ -86,7 +86,7 @@ define(['text'], function(textPlugin) {
 						end = /\/>$/.test(tag) ? '/>' : '>';
 					
 					result += start + attrs.map(function(attr) {
-						return attr.replace(attrPattern, ' $1=$2');
+						return attr.replace(attrPattern, ' $1$2$3');
 					}).join('') + end;
 				}
 				
