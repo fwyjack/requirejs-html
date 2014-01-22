@@ -15,20 +15,10 @@ define(['text'], function(textPlugin) {
 			
 			textPlugin.get(req.toUrl(file), function(html) {
 			
-				if (config.config.html.comments === true) {
-					html = this.stripComments(html);
-				}
-				
-				if (config.config.html.whitespaceBetweenTags === true) {
-					html = this.stripWhitespaceBetweenTags(html);
-				}
-				
-				if (config.config.html.whitespaceBetweenTagsAndText === true) {
-					html = this.stripWhitespaceBetweenTagsAndText(html);
-				}
-				
-				if (config.config.html.whitespaceWithinTags === true) {
-					html = this.stripWhitespaceWithinTags(html);
+				for (var option in config.config.html) {
+					if (option in this.transform) {
+						html = this.transform[option](config.config.html[option], html);
+					}
 				}
 				
 				if (config.isBuild) {
@@ -51,53 +41,82 @@ define(['text'], function(textPlugin) {
 		},
 		
 		
-		stripComments: function(html) {
-			return html.replace(/<!--(.|[\n\r])*?-->/gm, '');
-		},
-		
-		
-		stripWhitespaceBetweenTags: function(html) {
-			return html.replace(/>[\n\r\s]+</gm, '><');
-		},
-		
-		
-		stripWhitespaceBetweenTagsAndText: function(html) {
-			return html.replace(/>[\n\r\s]+/gm, '>').replace(/[\n\r\s]+</gm, '<');
-		},
-		
-		
-		stripWhitespaceWithinTags: function(html) {
-			var tagPattern = /<([^>"']*?|"[^"]*?"|'[^']*?')+>/g,
-				attrPattern = /([^\0\n\r\s"'>\/=]+)(?:\s*(=)\s*([^\n\r\s"'=><`]+|"[^"]*"|'[^']*'))?/gi,
-				lastIndex = 0,
-				result = '',
-				match,
-				tag;
+		transform: {
 			
-			while ((match = tagPattern.exec(html)) !== null) {
+			comments: function(action, html) {
+				if (action === 'strip') {
+					return html.replace(/<!--(.|[\n\r])*?-->/gm, '');
+				} else {
+					return html;
+				}
+			},
+			
+			
+			whitespaceBetweenTags: function(action, html) {
+				var pattern = />[\n\r\s]+</gm;
+			
+				if (action === 'strip') {
+					return html.replace(pattern, '><');
+				} else if (action === 'collapse') {
+					return html.replace(pattern, '> <');
+				} else {
+					return html;
+				}
+			},
+			
+			
+			whitespaceBetweenTagsAndText: function(action, html) {
+				var afterTagPattern = />[\n\r\s]+/gm,
+					beforeTagPattern = /[\n\r\s]+</gm;
 				
-				// Copy text between the beginning of this match and the end of the last one
-				result += html.substring(lastIndex, match.index);
-				tag = match[0];
-				
-				if (/^<[^\/]/.test(tag)) {  // It's a start tag
-					var attrs = tag.match(attrPattern),
-						start = attrs.shift(),
-						end = /\/>$/.test(tag) ? '/>' : '>';
+				if (action === 'strip') {
+					return html.replace(afterTagPattern, '>').replace(beforeTagPattern, '<');
+				} else if (action === 'collapse') {
+					return html.replace(afterTagPattern, '> ').replace(beforeTagPattern, ' <');
+				} else {
+					return html;
+				}
+			},
+		
+		
+			whitespaceWithinTags: function(action, html) {
+				if (action === 'collapse') {
+					var tagPattern = /<([^>"']*?|"[^"]*?"|'[^']*?')+>/g,
+						attrPattern = /([^\0\n\r\s"'>\/=]+)(?:\s*(=)\s*([^\n\r\s"'=><`]+|"[^"]*"|'[^']*'))?/gi,
+						lastIndex = 0,
+						result = '',
+						match,
+						tag;
 					
-					result += start + attrs.map(function(attr) {
-						return attr.replace(attrPattern, ' $1$2$3');
-					}).join('') + end;
-				}
+					while ((match = tagPattern.exec(html)) !== null) {
 				
-				else {  // It's an end tag
-					result += tag.replace(/[\n\r\s]+/g, '');
+						// Copy text between the beginning of this match and the end of the last one
+						result += html.substring(lastIndex, match.index);
+						tag = match[0];
+						
+						if (/^<[^\/]/.test(tag)) {  // It's a start tag
+							var attrs = tag.match(attrPattern),
+								start = attrs.shift(),
+								end = /\/>$/.test(tag) ? '/>' : '>';
+					
+							result += start + attrs.map(function(attr) {
+								return attr.replace(attrPattern, ' $1$2$3');
+							}).join('') + end;
+						}
+						
+						else {  // It's an end tag
+							result += tag.replace(/[\n\r\s]+/g, '');
+						}
+						
+						lastIndex = tagPattern.lastIndex;
+					}
+					
+					return result + html.substring(lastIndex);
+				} else {
+					return html;
 				}
-				
-				lastIndex = tagPattern.lastIndex;
 			}
 			
-			return result + html.substring(lastIndex);
 		}
 		
 	};
