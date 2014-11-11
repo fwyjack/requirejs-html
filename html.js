@@ -5,7 +5,8 @@ define(['text'], function(textPlugin) {
 	return {
 		
 		load: function(name, req, onLoad, config) {
-			var file = name,
+			var self = this,
+				file = name,
 				segments = file.split('/');
 		
 			// If the module name does not have an extension, append the default one
@@ -16,8 +17,8 @@ define(['text'], function(textPlugin) {
 			textPlugin.get(req.toUrl(file), function(html) {
 			
 				for (var option in config.config.html) {
-					if (option in this.transform) {
-						html = this.transform[option](config.config.html[option], html);
+					if (option in self.transform) {
+						html = self.transform[option](config.config.html[option], html);
 					}
 				}
 				
@@ -27,7 +28,7 @@ define(['text'], function(textPlugin) {
 				
 				onLoad(html);
 				
-			}.bind(this), onLoad.error);
+			}, onLoad.error);
 		},
 		
 		
